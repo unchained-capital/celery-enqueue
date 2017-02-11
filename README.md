@@ -32,6 +32,12 @@ For now, simply clone this repository somewhere:
 $ git clone https://github.com/unchained-capital/bitcoind-celery-notifier
 ```
 
+Use `pip` to install Python dependencies:
+
+```
+$ pip install -r requirements.txt
+```
+
 # Configuration
 
 Some configuration is needed to find your RabbitMQ server and to

@@ -38,6 +38,8 @@ Use `pip` to install Python dependencies:
 $ pip install -r requirements.txt
 ```
 
+or just run `make`.
+
 # Configuration
 
 Some configuration is needed to find your RabbitMQ server and to

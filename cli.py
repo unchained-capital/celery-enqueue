@@ -1,4 +1,5 @@
 from sys      import stderr
+from os       import system
 from optparse import OptionParser
 
 from config import *
@@ -17,7 +18,7 @@ def _command_line_parser(program_name, arg_name, help_text):
     
     return parser
     
-def run(program_name, arg_name, notify_type, help_text):
+def _run(program_name, arg_name, notify_type, help_text):
     parser        = _command_line_parser(program_name, arg_name, help_text)
     options, args = parser.parse_args()
     
@@ -28,3 +29,20 @@ def run(program_name, arg_name, notify_type, help_text):
         load_config(options.config_path)
         enqueue_tasks(notify_type, args[0])
         exit(0)
+
+def _handle_error(program_name, e):
+    error_command = get_config('error_command')
+    if error_command:
+        error_message = "{}: {}".format(type(e).__name__, str(e))
+        error_command = error_command.replace('%p', program_name)
+        error_command = error_command.replace('%e', error_message)
+        system(error_command)
+    else:
+        raise e
+
+def run(program_name, arg_name, notify_type, help_text):
+    try:
+        _run(program_name, arg_name, notify_type, help_text)
+    except Exception as e:
+        _handle_error(program_name, e)
+        exit(2)

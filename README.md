@@ -141,6 +141,31 @@ blocknotify:
 	  ...
 ```
 
+## Errors
+
+In case of error, the `error_command` configuration setting will be
+interpolated and run.  The following example would simply print errors
+to `STDOUT`:
+
+```yaml
+---
+# in /etc/bitcoind/notifiers.celery.yml
+
+error_command: |
+  echo 'ERROR: Failed to %p (%e)'
+```
+
+The `%` format codes will be replaced with the following values before
+the command is run:
+
+* `%p` -- the program name, one of: `blocknotify`, `walletnotify`, or `alertnotify`.
+* `%e` -- the error message
+
+If no configuration exists for `error_command` (the default behavior),
+then no command will be run; the error will simply bubble up and crash
+the Python interpreter, printing the usual stacktrace and error
+message.
+
 # Usage
 
 ## Manually

@@ -1,28 +1,38 @@
 #
 # == Commands ==
 #
-PIP  := pip
+PYTHON  := python
+PIP     := pip
+TWINE   := twine
+FIND    := find
 
 #
 # == Top-Level Targets ==
 #
+
 default: dependencies
 
-dependencies: python-dependencies
+dependencies:
+	$(PIP) install -r requirements.txt
 
 clean:
 	$(FIND) . -iname '*.pyc' -delete
+	$(RM) -r dist build celery_enqueue.egg-info
 
 install:
-	pip install -e .
+	$(PIP) install -e .
 
 uninstall:
-	pip uninstall celery-enqueue
+	$(PIP) uninstall celery-enqueue
 
+package:
+	$(PYTHON) setup.py egg_info
+	$(PYTHON) setup.py sdist
+	$(PYTHON) setup.py bdist_wheel --universal
+
+release:
+	$(TWINE) upload dist/*
 
 #
 # == Dependencies ==
 #
-
-python-dependencies:
-	$(PIP) install -r requirements.txt

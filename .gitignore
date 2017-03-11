@@ -1,2 +1,4 @@
 *.pyc
 celery_enqueue.egg-info/*
+build/*
+dist/*

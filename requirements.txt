@@ -1,5 +1,6 @@
 # Runtime (duplicated in setup.py)
 celery==4.0.2
+PyYaml==3.12
 
 # Development
 twine==1.8.1

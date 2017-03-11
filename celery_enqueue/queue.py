@@ -2,7 +2,7 @@ from sys import stderr
 
 from celery import Celery
 
-from config import *
+from .config import *
 
 def validate_authentication():
     """Validates current authentication configuration.

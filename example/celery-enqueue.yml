@@ -1,11 +1,11 @@
 ---
 
 #
-# Example configuration file for celery-notifier 
+# Example configuration file for celery-enqueue 
 # ==============================================
 #
 # Copy this file somewhere convenient for your application and
-# uncomment and modify its entries to configure celery-notifier.
+# uncomment and modify its entries to configure celery-enqueue.
 #
 # The commented values are identical to the defaults.
 #
@@ -15,7 +15,7 @@
 # ----------------
 #
 # The following options affect the overall behavior of
-# celery-notifier.
+# celery-enqueue.
 #
 
 # Whether to be verbose while running.
@@ -28,9 +28,8 @@
 #
 # success: false
 
-# The command to run whenever a notify command encounters an
-# exception. (You need to the set the 'success' option to 'true' to
-# enable this.)
+# The command to run when an uncaught exception occurs.  (You need to
+# the set the 'success' option to 'true' to enable this.)
 #
 # The following codes will interpolated when constructing the command:
 #
@@ -49,7 +48,7 @@
 # RabbitMQ Options
 # ----------------
 #
-# The following options affect how celery-notifier connects to
+# The following options affect how celery-enqueue connects to
 # RabbitMQ.
 #
 

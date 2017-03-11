@@ -1,2 +1,2 @@
 *.pyc
-celery_notifier.egg-info/*
+celery_enqueue.egg-info/*

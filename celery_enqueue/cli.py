@@ -1,9 +1,9 @@
-from sys      import stderr
+from sys      import stderr, stdout
 from os       import system
 from optparse import OptionParser
 
-from config import *
-from queue  import *
+from .config import *
+from .queue  import *
 
 USAGE = "%prog [OPTIONS] TASK [ARG] ..."
 
@@ -55,11 +55,14 @@ def run():
 
     if get_config('success'):
         try:
-            print enqueue(task, args)
+            result = enqueue(task, args)
         except Exception as e:
+            result = None
             _run_error_command(task, args, e)
     else:
-        print enqueue(task, args)
+        result = enqueue(task, args)
+    if result:
+        stdout.write(str(result) + "\n")
     exit(0)
     
 def _command_line_parser():

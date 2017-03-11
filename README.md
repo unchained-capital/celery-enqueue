@@ -1,4 +1,4 @@
-# Celery Notifier
+# Celery Enqueue
 
 [Celery](http://www.celeryproject.org/) is a distributed task queue
 for Python that uses [RabbitMQ](https://www.rabbitmq.com/) (or
@@ -34,14 +34,14 @@ easy.
 Via `pip`:
 
 ```
-$ pip install celery-notifier
+$ pip install celery-enqueue
 ```
 
 Via source:
 
 ```
-$ git clone https://github.com/unchained-capital/celery-notifier
-$ cd celery-notifier
+$ git clone https://github.com/unchained-capital/celery-enqueue
+$ cd celery-enqueue
 $ make
 ```
 
@@ -79,7 +79,7 @@ running locally at the default port with no custom vhosts, users, or
 security, you can run:
 
 ```python
-from celery_notifier import enqueue
+from celery_enqueue import enqueue
 enqueue("my_app.tasks.my_task", ["arg1", "arg2"])
 ```
 
@@ -91,14 +91,14 @@ be identical to having run `my_app.tasks.my_task.delay("arg1",
 This behavior can be configured at runtime:
 
 ```python
-from celery_notifier import enqueue, set_config
+from celery_enqueue import enqueue, set_config
 set_config({'host': 'rabbitmq.internal'})
 enqueue("my_app.tasks.my_task", ["arg1", "arg2"])
 ```
 
 # Configuration
 
-See `example/celery-notifier.yml` in this repository for an example
+See `example/celery-enqueue.yml` in this repository for an example
 configuration file you can copy and modify.
 
 ## RabbitMQ

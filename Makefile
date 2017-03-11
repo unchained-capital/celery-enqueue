@@ -17,7 +17,7 @@ install:
 	pip install -e .
 
 uninstall:
-	pip uninstall celery-notifier
+	pip uninstall celery-enqueue
 
 
 #

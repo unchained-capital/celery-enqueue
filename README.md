@@ -1,202 +1,154 @@
-# Bitcoind Celery Notifier
+# Celery Notifier
 
-The `bitcoind` program has three notification settings in its
-configuration file which trigger system commands upon certain
-conditions:
+[Celery](http://www.celeryproject.org/) is a distributed task queue
+for Python that uses [RabbitMQ](https://www.rabbitmq.com/) (or
+[Redis](https://redis.io/)) for state.
 
-* `blocknotify`
-  * fires whenever there is a new block
-  * passes the new block's hash
-* `walletnotify`
-  * fires whenever
-    * a new transaction appears in the mempool
-	* a transaction is mined
-  * passes the transaction's ID
-* `alertnotify`
-  * fires whenever there is an alert
-  * passes the alert's text
-  
-This repository contains three corresponding scripts (`blocknotify`,
-`walletnotify`, and `alertnotify`) which, when run by `bitcoind`,
-simply deposit their arguments onto RabbitMQ queues.
+The usual pattern in Celery is to have task implementations and the
+code which enqueues/schedules tasks within the same application:
 
-Celery tasks (defined by you, somewhere else) can then process these
-queues appropriately, likely by turning around and querying `bitcoind`
-for more details on the new block, transaction, alert, &c.
+```python
+# in tasks.py
+
+def doit(arg):
+	...
+```
+
+```python
+# in app.py
+from tasks import *
+result = doit.delay(123)
+```
+
+Sometimes it is useful to be able to split these functions across
+totally different hosts/applications, using Celery's state (e.g. -
+RabbitMQ) to connect them.  Unfortunately, Celery doesn't make it as
+easy as it could be to schedule the `doit` task without having the
+`tasks.py` file available locally.
+
+The `celery-enqueue` program included with this library makes this
+easy.
 
 # Installation
 
-For now, simply clone this repository somewhere:
+Via `pip`:
 
 ```
-$ git clone https://github.com/unchained-capital/bitcoind-celery-notifier
+$ pip install celery-notifier
 ```
 
-Use `pip` to install Python dependencies:
+Via source:
 
 ```
-$ pip install -r requirements.txt
+$ git clone https://github.com/unchained-capital/celery-notifier
+$ cd celery-notifier
+$ make
 ```
 
-or just run `make`.
+# Usage
+
+## Command-Line
+
+Assuming you installed via `pip`, the `celery-enqueue` command should
+be installed.  Try running it with the `-h` flag to see more details:
+
+```
+$ celery-enqueue -h
+```
+
+If you have a RabbitMQ server running locally at the default port with
+no custom vhosts, users, or security, you can run:
+
+```
+$ celery-enqueue my_app.tasks.my_task arg1 arg2
+```
+
+to enqueue the task `my_app.tasks.my_task` with arguments `('arg1',
+'arg2')` into the local RabbitMQ broker's `celery` queue.  This should
+be identical to having run `my_app.tasks.my_task.delay("arg1",
+"arg2")` from within your application.
+
+This behavior can be configured on the command-line as well as via a
+configuration file.
+
+## Python
+
+Assuming that your `PYTHONPATH` is properly set up (this is handled
+for you if you installed using `pip`), and you have a RabbitMQ server
+running locally at the default port with no custom vhosts, users, or
+security, you can run:
+
+```python
+from celery_notifier import enqueue
+enqueue("my_app.tasks.my_task", ["arg1", "arg2"])
+```
+
+to enqueue the task `my_app.tasks.my_task` with arguments `('arg1',
+'arg2')` into the local RabbitMQ broker's `celery` queue.  This should
+be identical to having run `my_app.tasks.my_task.delay("arg1",
+"arg2")` from within your application.
+
+This behavior can be configured at runtime:
+
+```python
+from celery_notifier import enqueue, set_config
+set_config({'host': 'rabbitmq.internal'})
+enqueue("my_app.tasks.my_task", ["arg1", "arg2"])
+```
 
 # Configuration
+
+See `example/celery-notifier.yml` in this repository for an example
+configuration file you can copy and modify.
+
+## RabbitMQ
 
 Some configuration is needed to find your RabbitMQ server and to
 ensure data is enqueued so your Celery tasks will find it.
 
-The default configuration file read by the notify scripts is
-`/etc/bitcoind/notifiers.celery.yml`.  You can also specify your own
-configuration file with the `-c` or `--config` arguments to any of the
-scripts.
-
-## RabbitMQ
-
-By default, the scripts will attempt to connect to the vhost `bitcoin`
-on a local RabbitMQ server on the default port (5672) with no
+By default, the scripts will attempt to connect to the vhost `/` on a
+local RabbitMQ server on the default port (5672) with no
 authentication.
 
-To change any of these settings globally, set `broker_url` your
-configuration file:
+The following configuration settings affect this default behavior:
+
+* `user` -- the name of the RabbitMQ user
+* `password` -- the password of the RabbitMQ user
+* `host` -- the hostname or IP of the RabbitMQ broker
+* `port` -- the port of the RabbitMQ broker
+* `vhost` -- the RabbitMQ vhost used by Celery
+* `queue` -- the RabbitMQ queue used by Celery
+
+These settings can be provided on the command-line, via a
+configuration file, or by calling `set_config`.
+
+## Error handling
+
+In case of an uncaught exception, the default behavior is for
+`celery-enqueue` to print a Python stacktrace and exit with a nonzero
+return code.
+
+The following configuration settings affect this default behavior:
+
+* `success` -- make `celery-enqueue` always exit successfully with a return code of 0
+* `error_command` -- run this command.  The following strings will be interpolated:
+ * `%e` -- the error message of the exception
+ * `%u` -- the (masked) URL of the RabbitMQ broker
+ * `%t` -- the name of the task
+ * `%a` -- the arguments to the task
+
+(The `error_command` will only run if `success` is also set.)
+
+A simple example, handled via a configuration file:
 
 ```yaml
----
-# in /etc/bitcoind/notifiers.celery.yml
-
-# Use a more complex RabbitMQ broker URL globally.
-broker_url: "amqp://username@password:rabbitmq.example.com:5672/my/vhost"
+# in config.yml
+error_command: |	
+	echo 'ERROR: Failed to enqueue task %t(%a) at broker %u. (%e)'
 ```
 
-## Celery
-
-### Queue
-
-Celery listens on a particular queue, taken by default to be `celery`.
-
-To change this globally, set `queue` in your configuration file:
-
-```yaml
----
-# in /etc/bitcoind/notifiers.celery.yml
-
-# Use this Celery queue globally.
-queue: bitcoin_tasks
-```
-
-### Tasks
-
-The actual tasks Celery runs are named as strings.  Configure them as
-follows:
-
-```yaml
----
-# in /etc/bitcoind/notifiers.celery.yml
-
-# Define tasks for blocknotify
-blocknotify:
-  - tasks:
-      - stats.track_block
-	  - accounting.update_accounts
-	  - security.scan_transactions
-	  ...
-
-# Similar settings apply for walletnotify and alertnotify
-walletnotify:
-  ...
-alertnotify
-  ...
-```
-
-By default, no tasks are run for any of the scripts (you'll see a
-warning message in this case).
-
-Note that the `tasks` key is nested within an array within the
-`blocknotify` key above (and the same for `walletnotify` and
-`alertnotify`).  This seems redundant, but is useful when different
-tasks need to be routed to different RabbitMQ servers or vhosts or
-different Celery queues.
-
-Here is a more complex example:
-
-```yaml
----
-# in /etc/bitcoind/notifiers.celery.yml
-
-# Define tasks for blocknotify
-blocknotify:
-  # These tasks use global settings. 
-  - tasks:
-	  - accounting.update_accounts
-	  ...
-  # These tasks have a different broker.
-  - broker_url: amqp://localhost:5672/operations
-    tasks:
-      - stats.track_block
-	  ...
-  # These tasks have a different broker and queue name.
-  - broker_url: amqp://localhost:5672/security
-    queue:      bitcoind
-	tasks:
-	  - security.scan_transactions
-	  ...
-```
-
-## Errors
-
-In case of error, the `error_command` configuration setting will be
-interpolated and run.  The following example would simply print errors
-to `STDOUT`:
-
-```yaml
----
-# in /etc/bitcoind/notifiers.celery.yml
-
-error_command: |
-  echo 'ERROR: Failed to %p (%e)'
-```
-
-The `%` format codes will be replaced with the following values before
-the command is run:
-
-* `%p` -- the program name, one of: `blocknotify`, `walletnotify`, or `alertnotify`.
-* `%e` -- the error message
-
-If no configuration exists for `error_command` (the default behavior),
-then no command will be run; the error will simply bubble up and crash
-the Python interpreter, printing the usual stacktrace and error
-message.
-
-# Usage
-
-## Manually
-
-You can run any of these scripts yourself:
+And invoked like this:
 
 ```
-$ ./blocknotify 000000000000056563c65cdd0b6f361aba84271eb33bac11f926ff627dc32361
-$ ./walletnotify 7ab7852c6fde880651e751e4fc8151015614aa24a0547e5db96e08387423c44a
-$ ./alertnotify 'Blockchain has begun eating itself.  Have a nice day!'
+  $ celery-enqueue -c config.yml my_app.tasks.my_task arg1 arg2
 ```
-
-They all accept the following options:
-
-* `-c` or `--config` to provide the path to a configuration file other than `/etc/bitcoind/notifiers.celery.yml`.
-* `-h` or `--help` to see these options
-
-## Automatically
-
-To get `bitcoin` to run these scripts for you you'll need to configure
-it:
-
-```
-# in /etc/bitcoind/bitcoind.conf
-blocknotify=/path/to/bitcoind-celery-notifier/blocknotify %s
-walletnotify=/path/to/bitcoind-celery-notifier/walletnotify %s
-alertnotify=/path/to/bitcoind-celery-notifier/alertnotify %s
-```
-
-Don't forget to add the `-c` option to the above lines if you want
-`bitcoind` to use a configuration file other than
-`/etc/bitcoind/notifiers.celery.yml`.  In either case, the user
-running `bitcoin` will need permissions to be able to read the
-configuration file.

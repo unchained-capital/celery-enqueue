@@ -1,0 +1,85 @@
+---
+
+#
+# Example configuration file for celery-notifier 
+# ==============================================
+#
+# Copy this file somewhere convenient for your application and
+# uncomment and modify its entries to configure celery-notifier.
+#
+# The commented values are identical to the defaults.
+#
+
+#
+# Behavior Options
+# ----------------
+#
+# The following options affect the overall behavior of
+# celery-notifier.
+#
+
+# Whether to be verbose while running.
+#
+# verbose: false
+
+# Whether to always return a successful (0) exit code.
+#
+# Required if the 'error_command' option below will be used.
+#
+# success: false
+
+# The command to run whenever a notify command encounters an
+# exception. (You need to the set the 'success' option to 'true' to
+# enable this.)
+#
+# The following codes will interpolated when constructing the command:
+#
+#   - %e -- the text of the exception's error message
+#   - %u -- the (masked) URL of the RabbitMQ broker
+#   - %t -- the task attempted to enqueue
+#   - %a -- the arguments (as a comma-separated string) to the task
+#
+# If not set, then errors will cause the usual Python stacktrace to
+# print.
+#
+# error_command: |
+#   echo 'ERROR: Failed to %p (%e)'
+
+#
+# RabbitMQ Options
+# ----------------
+#
+# The following options affect how celery-notifier connects to
+# RabbitMQ.
+#
+
+# The username of the RabbitMQ user to connect as.
+#
+# If you set this value, you must also set 'password', either here or
+# at the command-line.
+#
+# user: myapp
+
+# The password of the RabbitMQ user to connect as.
+#
+# If you set this value, you must also set 'user', either here or at
+# the command-line.
+#
+# password: ae92p893iuc
+
+# The hostname (or IP address) of the RabbitMQ broker.
+#
+# host: localhost
+
+# The port of the RabbitMQ broker
+#
+# port: 5672
+
+# The name of the RabbitMQ vhost used by Celery
+#
+# vhost: /
+
+# The name of the RabbitMQ queue used by Celery.
+#
+# queue: celery
+

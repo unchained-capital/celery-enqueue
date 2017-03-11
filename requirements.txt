@@ -1,1 +1,5 @@
+# Runtime (duplicated in setup.py)
 celery==4.0.2
+
+# Development
+twine==1.8.1

@@ -13,6 +13,13 @@ dependencies: python-dependencies
 clean:
 	$(FIND) . -iname '*.pyc' -delete
 
+install:
+	pip install -e .
+
+uninstall:
+	pip uninstall celery-notifier
+
+
 #
 # == Dependencies ==
 #

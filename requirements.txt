@@ -1,5 +1,5 @@
 # Runtime (duplicated in setup.py)
-celery==4.0.2
+celery==5.2.2
 PyYaml==3.12
 
 # Development
